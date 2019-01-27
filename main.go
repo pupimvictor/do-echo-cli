@@ -22,16 +22,22 @@ type echoClient struct {
 	stdOut   io.Writer
 }
 
-func newEchoClient(host string, msgs *[]models.Message, delay time.Duration) echoClient {
+func newEchoClient(c *cli.Context, msgs *[]models.Message) (echoClient, error) {
+ 	host := c.GlobalString("host")
+	if host == "" {
+		return echoClient{}, errors.New("invalid host address. use do-echo-cli --help for help")
+	}
 	transport := httptransport.New(host, "", nil)
 	echoer := client.New(transport, strfmt.Default)
+
+	delay := time.Duration(c.Int64("delay"))
 
 	return echoClient{
 		echoer: echoer,
 		messages: msgs,
-		delay: time.Microsecond * delay,
+		delay: time.Millisecond * delay,
 		stdOut: os.Stdout,
-	}
+	}, nil
 }
 
 func main() {
@@ -40,7 +46,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println("")
+	fmt.Println()
 }
 
 func wrapMain() error {
@@ -48,6 +54,12 @@ func wrapMain() error {
 	app.Name = "Echo Client"
 	app.Usage = "A client for Echo app"
 	app.Version = "0.0.1"
+	app.Flags = []cli.Flag {
+		cli.StringFlag{
+			Name:  "host",
+			Usage: "echo host server address. format: ip:port",
+		},
+	}
 	app.Commands = []cli.Command{
 		{
 			Name:   "yell",
@@ -58,50 +70,39 @@ func wrapMain() error {
 					Name:  "msg",
 					Usage: "A message to be echoed",
 				},
-				cli.StringFlag{
-					Name:  "host",
-					Usage: "echo host server address. format: ip:port",
-				},
+
 			},
 		},
 		{
 			Name:   "batch",
-			Usage:  "yells a messages in batch",
+			Usage:  "yells messages in batch to the echo server",
 			Action: runBatch,
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "file",
 					Usage: "path to a list of messages file",
 				},
-				cli.IntFlag{
+				cli.Int64Flag{
 					Name:  "delay",
-					Usage: "delay between yells in milliseconds",
-				},
-				cli.StringFlag{
-					Name:  "host",
-					Usage: "echo host server address",
+					Usage: "delay time in milliseconds between messages",
 				},
 			},
 		},
 	}
-
 	return app.Run(os.Args)
 }
 
 func runYell(c *cli.Context) error {
-	host := c.String("host")
-	if host == "" {
-		return errors.New("invalid host address. use do-echo-cli yell --help for help")
-	}
-
 	msgStr := c.String("msg")
 	msg := &[]models.Message{
 		{
 			Msg: &msgStr,
 		},
 	}
-
-	echoCli := newEchoClient(host, msg, 0)
+	echoCli, err := newEchoClient(c, msg)
+	if err != nil {
+		return err
+	}
 	return echoCli.yell()
 }
 
@@ -122,6 +123,19 @@ func (e *echoClient) yell() (error) {
 }
 
 func runBatch(c *cli.Context) error {
-	//delay := c.Int("delay")
+	filePath := c.String("file")
+	msg := &[]models.Message{
+		{
+			Msg: &filePath,
+		},
+		{
+			Msg: &filePath,
+		},
+	}
+	echoCli, err := newEchoClient(c, msg)
+	if err != nil {
+		return err
+	}
+	return echoCli.yell()
 	return nil
 }
