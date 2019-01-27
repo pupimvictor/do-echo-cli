@@ -1,0 +1,61 @@
+---
+swagger: "2.0"
+info:
+  description: An app to try echo messages
+  title: A Echoer application
+  version: 1.0.0
+consumes:
+- application/json
+produces:
+- application/json
+schemes:
+- http
+paths: 
+  /echo:
+    post:
+      tags:
+        - echo
+      operationId: echo
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: "#/definitions/message"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/echo"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+
+
+definitions:
+  message:
+    type: object
+    required:
+      - msg
+    properties:
+      msg:
+        type: string
+
+  echo:
+    type: object
+    properties:
+      echo:
+        type: string
+
+  error:
+    type: object
+    required:
+      - message
+    properties:
+      code:
+        type: integer
+        format: int64
+      message:
+        type: string
+
+
