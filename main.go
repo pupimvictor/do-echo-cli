@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"github.com/go-openapi/strfmt"
@@ -9,6 +10,7 @@ import (
 	"github.com/pupimvictor/do-echo-cli/models"
 	"github.com/urfave/cli"
 	"io"
+	"log"
 	"os"
 	"time"
 
@@ -23,7 +25,7 @@ type echoClient struct {
 }
 
 func newEchoClient(c *cli.Context, msgs *[]models.Message) (echoClient, error) {
- 	host := c.GlobalString("host")
+	host := c.GlobalString("host")
 	if host == "" {
 		return echoClient{}, errors.New("invalid host address. use do-echo-cli --help for help")
 	}
@@ -33,10 +35,10 @@ func newEchoClient(c *cli.Context, msgs *[]models.Message) (echoClient, error) {
 	delay := time.Duration(c.Int64("delay"))
 
 	return echoClient{
-		echoer: echoer,
+		echoer:   echoer,
 		messages: msgs,
-		delay: time.Millisecond * delay,
-		stdOut: os.Stdout,
+		delay:    time.Millisecond * delay,
+		stdOut:   os.Stdout,
 	}, nil
 }
 
@@ -46,7 +48,6 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println()
 }
 
 func wrapMain() error {
@@ -54,7 +55,7 @@ func wrapMain() error {
 	app.Name = "Echo Client"
 	app.Usage = "A client for Echo app"
 	app.Version = "0.0.1"
-	app.Flags = []cli.Flag {
+	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "host",
 			Usage: "echo host server address. format: ip:port",
@@ -70,7 +71,6 @@ func wrapMain() error {
 					Name:  "msg",
 					Usage: "A message to be echoed",
 				},
-
 			},
 		},
 		{
@@ -106,14 +106,14 @@ func runYell(c *cli.Context) error {
 	return echoCli.yell()
 }
 
-func (e *echoClient) yell() (error) {
+func (e *echoClient) yell() error {
 	for _, msg := range *e.messages {
 		params := echo.NewEchoParams().WithBody(&msg)
 		echoMsg, err := e.echoer.Echo.Echo(params)
 		if err != nil {
 			return err
 		}
-		_, err = e.stdOut.Write([]byte(echoMsg.Payload.Echo))
+		_, err = e.stdOut.Write([]byte(fmt.Sprintf("%s\n", echoMsg.Payload.Echo)))
 		if err != nil {
 			return err
 		}
@@ -123,19 +123,28 @@ func (e *echoClient) yell() (error) {
 }
 
 func runBatch(c *cli.Context) error {
+	var msgs []models.Message
+
 	filePath := c.String("file")
-	msg := &[]models.Message{
-		{
-			Msg: &filePath,
-		},
-		{
-			Msg: &filePath,
-		},
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
 	}
-	echoCli, err := newEchoClient(c, msg)
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		msg := scanner.Text()
+		msgs = append(msgs, models.Message{Msg: &msg})
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	echoCli, err := newEchoClient(c, &msgs)
 	if err != nil {
 		return err
 	}
 	return echoCli.yell()
-	return nil
 }
