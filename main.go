@@ -29,6 +29,7 @@ func newEchoClient(c *cli.Context, msgs *[]models.Message) (echoClient, error) {
 	if host == "" {
 		return echoClient{}, errors.New("invalid host address. use do-echo-cli --help for help")
 	}
+	fmt.Printf("host %s\n", host)
 	transport := httptransport.New(host, "", nil)
 	echoer := client.New(transport, strfmt.Default)
 
@@ -111,11 +112,11 @@ func (e *echoClient) yell() error {
 		params := echo.NewEchoParams().WithBody(&msg)
 		echoMsg, err := e.echoer.Echo.Echo(params)
 		if err != nil {
-			return err
+			return errors.New("err calling server: " + err.Error())
 		}
 		_, err = e.stdOut.Write([]byte(fmt.Sprintf("%s\n", echoMsg.Payload.Echo)))
 		if err != nil {
-			return err
+			return errors.New("err writing to stdout:" + err.Error())
 		}
 		time.Sleep(e.delay)
 	}
