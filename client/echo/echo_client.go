@@ -27,7 +27,7 @@ type Client struct {
 /*
 Echo echo API
 */
-func (a *Client) Echo(params *EchoParams) (*EchoOK, error) {
+func (a *Client) Echo(params *EchoParams, authInfo runtime.ClientAuthInfoWriter) (*EchoOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewEchoParams()
@@ -42,6 +42,7 @@ func (a *Client) Echo(params *EchoParams) (*EchoOK, error) {
 		Schemes:            []string{"http"},
 		Params:             params,
 		Reader:             &EchoReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})

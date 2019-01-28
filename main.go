@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 	"github.com/pupimvictor/do-echo-cli/client"
 	"github.com/pupimvictor/do-echo-cli/client/echo"
@@ -22,6 +23,7 @@ type echoClient struct {
 	messages *[]models.Message
 	delay    time.Duration
 	stdOut   io.Writer
+	auth     runtime.ClientAuthInfoWriter
 }
 
 func main() {
@@ -41,6 +43,10 @@ func wrapMain() error {
 		cli.StringFlag{
 			Name:  "host",
 			Usage: "echo host server address. format: ip:port",
+		},
+		cli.StringFlag{
+			Name:  "token",
+			Usage: "X api token",
 		},
 	}
 	app.Commands = []cli.Command{
@@ -123,10 +129,14 @@ func newEchoClient(c *cli.Context, msgs *[]models.Message) (echoClient, error) {
 	transport := httptransport.New(host, "", nil)
 	echoer := client.New(transport, strfmt.Default)
 
+	token := c.GlobalString("token")
+	authenticator := httptransport.APIKeyAuth("X-Token", "header", token)
+
 	delay := time.Duration(c.Int64("delay"))
 
 	return echoClient{
 		echoer:   echoer,
+		auth: authenticator,
 		messages: msgs,
 		delay:    time.Millisecond * delay,
 		stdOut:   os.Stdout,
@@ -136,7 +146,7 @@ func newEchoClient(c *cli.Context, msgs *[]models.Message) (echoClient, error) {
 func (e *echoClient) yell() error {
 	for _, msg := range *e.messages {
 		params := echo.NewEchoParams().WithBody(&msg)
-		echoMsg, err := e.echoer.Echo.Echo(params)
+		echoMsg, err := e.echoer.Echo.Echo(params, e.auth)
 		if err != nil {
 			return errors.New("err calling server: " + err.Error())
 		}

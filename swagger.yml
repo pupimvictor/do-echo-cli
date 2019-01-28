@@ -10,12 +10,19 @@ produces:
 - application/json
 schemes:
 - http
+securityDefinitions:
+  token_header:
+    type: apiKey
+    name: X-Token
+    in: header
 paths: 
   /echo:
     post:
       tags:
         - echo
       operationId: echo
+      security:
+        - token_header: []
       parameters:
         - name: body
           in: body
@@ -58,4 +65,6 @@ definitions:
       message:
         type: string
 
+  principal:
+    type: string
 
