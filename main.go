@@ -38,7 +38,7 @@ func wrapMain() error {
 	app := cli.NewApp()
 	app.Name = "Echo Client"
 	app.Usage = "A client for Echo app"
-	app.Version = "0.0.1"
+	app.Version = "1.0.0"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "host",
