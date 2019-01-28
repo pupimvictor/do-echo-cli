@@ -120,7 +120,6 @@ func newEchoClient(c *cli.Context, msgs *[]models.Message) (echoClient, error) {
 	if host == "" {
 		return echoClient{}, errors.New("invalid host address. use do-echo-cli --help for help")
 	}
-	fmt.Printf("host %s\n", host)
 	transport := httptransport.New(host, "", nil)
 	echoer := client.New(transport, strfmt.Default)
 
