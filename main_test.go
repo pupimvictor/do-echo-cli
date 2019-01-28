@@ -46,7 +46,6 @@ func TestYell(t *testing.T) {
 					Echo: test.msg,
 				}
 				respbytes, _ := json.Marshal(resp)
-				fmt.Printf("aa %s\n", test.expectedOutput)
 				_, err := w.Write(respbytes)
 				if err != nil {
 					t.Errorf("err on mock write: %v\n", err)

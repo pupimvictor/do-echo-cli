@@ -24,25 +24,6 @@ type echoClient struct {
 	stdOut   io.Writer
 }
 
-func newEchoClient(c *cli.Context, msgs *[]models.Message) (echoClient, error) {
-	host := c.GlobalString("host")
-	if host == "" {
-		return echoClient{}, errors.New("invalid host address. use do-echo-cli --help for help")
-	}
-	fmt.Printf("host %s\n", host)
-	transport := httptransport.New(host, "", nil)
-	echoer := client.New(transport, strfmt.Default)
-
-	delay := time.Duration(c.Int64("delay"))
-
-	return echoClient{
-		echoer:   echoer,
-		messages: msgs,
-		delay:    time.Millisecond * delay,
-		stdOut:   os.Stdout,
-	}, nil
-}
-
 func main() {
 	err := wrapMain()
 	if err != nil {
@@ -107,22 +88,6 @@ func runYell(c *cli.Context) error {
 	return echoCli.yell()
 }
 
-func (e *echoClient) yell() error {
-	for _, msg := range *e.messages {
-		params := echo.NewEchoParams().WithBody(&msg)
-		echoMsg, err := e.echoer.Echo.Echo(params)
-		if err != nil {
-			return errors.New("err calling server: " + err.Error())
-		}
-		_, err = e.stdOut.Write([]byte(fmt.Sprintf("%s\n", echoMsg.Payload.Echo)))
-		if err != nil {
-			return errors.New("err writing to stdout:" + err.Error())
-		}
-		time.Sleep(e.delay)
-	}
-	return nil
-}
-
 func runBatch(c *cli.Context) error {
 	var msgs []models.Message
 
@@ -148,4 +113,39 @@ func runBatch(c *cli.Context) error {
 		return err
 	}
 	return echoCli.yell()
+}
+
+func newEchoClient(c *cli.Context, msgs *[]models.Message) (echoClient, error) {
+	host := c.GlobalString("host")
+	if host == "" {
+		return echoClient{}, errors.New("invalid host address. use do-echo-cli --help for help")
+	}
+	fmt.Printf("host %s\n", host)
+	transport := httptransport.New(host, "", nil)
+	echoer := client.New(transport, strfmt.Default)
+
+	delay := time.Duration(c.Int64("delay"))
+
+	return echoClient{
+		echoer:   echoer,
+		messages: msgs,
+		delay:    time.Millisecond * delay,
+		stdOut:   os.Stdout,
+	}, nil
+}
+
+func (e *echoClient) yell() error {
+	for _, msg := range *e.messages {
+		params := echo.NewEchoParams().WithBody(&msg)
+		echoMsg, err := e.echoer.Echo.Echo(params)
+		if err != nil {
+			return errors.New("err calling server: " + err.Error())
+		}
+		_, err = e.stdOut.Write([]byte(fmt.Sprintf("%s\n", echoMsg.Payload.Echo)))
+		if err != nil {
+			return errors.New("err writing to stdout:" + err.Error())
+		}
+		time.Sleep(e.delay)
+	}
+	return nil
 }
