@@ -32,3 +32,4 @@ Type ./do-echo-cli --help
 ---------- change 1 -----------
 ---------- change 2 -----------
 ---------- rebase develop. breaks build -----------
+---------- change 3 -----------
