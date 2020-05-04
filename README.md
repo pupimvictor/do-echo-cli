@@ -31,3 +31,4 @@ Type ./do-echo-cli --help
 ---------- feature 1 -----------
 ---------- change 1 -----------
 ---------- change 2 -----------
+---------- rebase develop. breaks build -----------
