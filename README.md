@@ -30,3 +30,4 @@ Type ./do-echo-cli --help
  ;)---------- playing with gitflow releases -----------
 ---------- feature 1 -----------
 ---------- change 1 -----------
+---------- change 2 -----------
